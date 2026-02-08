@@ -1,3 +1,4 @@
+// handlers — HTTP layer. Receives audio, calls Gemini + Sheets, returns JSON.
 package handlers
 
 import (
@@ -29,9 +30,14 @@ type VoiceHandler struct {
 	Sheets *services.SheetsService
 }
 
-// VoiceToCRMRequest expects a multipart form with key "file" (wav or mp3).
-// POST /voice-to-crm
+// VoiceToCRM handles POST /voice-to-crm.
+// 1. Validate file (type, size)
+// 2. Save to temp file
+// 3. Call Gemini → get analysis
+// 4. Append row to Sheet
+// 5. Return analysis JSON
 func (h *VoiceHandler) VoiceToCRM(c *gin.Context) {
+	// Step 1: Get and validate the uploaded file
 	file, header, err := c.Request.FormFile(multipartFile)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "missing or invalid file; use form key 'file' with .wav, .mp3, or .webm"})
@@ -77,6 +83,7 @@ func (h *VoiceHandler) VoiceToCRM(c *gin.Context) {
 	}
 	audioPath := tmpFile.Name()
 
+	// Step 2: Send audio to Gemini, get structured analysis
 	analysis, err := h.Gemini.AnalyzeAudio(c.Request.Context(), audioPath, mime)
 	if err != nil {
 		log.Printf("Gemini analysis failed: %v", err)
@@ -84,6 +91,7 @@ func (h *VoiceHandler) VoiceToCRM(c *gin.Context) {
 		return
 	}
 
+	// Step 3: Append analysis row to Google Sheet
 	if err := h.Sheets.AppendAnalysisRow(c.Request.Context(), analysis); err != nil {
 		log.Printf("Sheets append failed: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{

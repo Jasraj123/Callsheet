@@ -1,3 +1,4 @@
+// services/gemini — calls Google Gemini to analyze audio and return structured JSON.
 package services
 
 import (
@@ -45,7 +46,7 @@ func NewGeminiService(apiKey string) (*GeminiService, error) {
 	return &GeminiService{client: client}, nil
 }
 
-// AnalyzeAudio uploads the audio file via Files API, sends it to Gemini with the sales prompt, and returns structured analysis.
+// AnalyzeAudio: 1) Upload audio to Gemini Files API, 2) Send prompt + audio to model, 3) Parse JSON response.
 func (s *GeminiService) AnalyzeAudio(ctx context.Context, audioPath, mimeType string) (*models.VoiceAnalysis, error) {
 	ctx, cancel := context.WithTimeout(ctx, analysisTimeout)
 	defer cancel()

@@ -1,3 +1,4 @@
+// services/sheets — appends analysis rows to a Google Sheet using the Sheets API.
 package services
 
 import (
@@ -45,7 +46,7 @@ func NewSheetsService(ctx context.Context, spreadsheetID string) (*SheetsService
 	return &SheetsService{svc: client, spreadsheetID: spreadsheetID}, nil
 }
 
-// AppendAnalysisRow appends one row: Timestamp, Client, Summary, Sentiment, Urgency, Urgent.
+// AppendAnalysisRow adds one row with: Timestamp | Client | Summary | Sentiment | Urgency | Urgent (Yes if urgency > 7).
 func (s *SheetsService) AppendAnalysisRow(ctx context.Context, analysis *models.VoiceAnalysis) error {
 	ctx, cancel := context.WithTimeout(ctx, sheetsTimeout)
 	defer cancel()

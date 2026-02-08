@@ -71,7 +71,7 @@ curl -X POST http://localhost:8080/voice-to-crm -F "file=@/path/to/call.mp3"
 | Backend   | Go, Gin                              |
 | AI        | Google Gemini 2.5 Flash              |
 | Storage   | Google Sheets API                    |
-| Frontend  | Vanilla HTML/JS (off-white UI)       |
+| Frontend  | Vanilla HTML/JS                      |
 
 ---
 
@@ -80,7 +80,7 @@ curl -X POST http://localhost:8080/voice-to-crm -F "file=@/path/to/call.mp3"
 ```
 Voiceline/
 ├── main.go
-├── .env                    # Your secrets (not committed)
+├── .env                    # Your secrets 
 ├── web/
 │   └── index.html         # Upload/Record + results UI
 └── internal/
@@ -189,9 +189,3 @@ For an MVP:
 - **Gemini** for audio analysis.
 - **Google Sheets** as CRM (or Postgres if you want a real DB).
 - **Firebase Auth** or **Supabase** for auth if you need it quickly.
-
----
-
-## License
-
-MIT.

@@ -1,3 +1,5 @@
+// VoiceLine — turns sales call audio into structured CRM data.
+// Flow: audio upload → Gemini analyzes → row appended to Google Sheet.
 package main
 
 import (
