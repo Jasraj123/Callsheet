@@ -1,0 +1,24 @@
+# Environment and secrets
+.env
+*credentials*.json
+*service-account*.json
+*-[0-9a-f]*.json
+
+# Go
+/vendor/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+voiceline
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

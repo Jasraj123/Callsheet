@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceLine</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+      background: #f8f6f1;
+      color: #2c2a26;
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #1a1917;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      color: #6b6560;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .upload-area {
+      padding: 1.5rem;
+      background: #fff;
+      border: 1px solid #e8e4dd;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .upload-area:hover {
+      border-color: #d4cfc6;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    input[type="file"] {
+      padding: 0.5rem 0;
+      background: transparent;
+      border: none;
+      color: #2c2a26;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    input[type="file"]::file-selector-button {
+      margin-right: 1rem;
+      padding: 0.5rem 1rem;
+      background: #f8f6f1;
+      border: 1px solid #e8e4dd;
+      border-radius: 6px;
+      color: #2c2a26;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    input[type="file"]::file-selector-button:hover {
+      background: #eeeae4;
+    }
+    button {
+      padding: 0.9rem 1.5rem;
+      background: #2c2a26;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #1a1917; }
+    button:disabled {
+      background: #a8a49e;
+      cursor: not-allowed;
+    }
+    .error {
+      padding: 1rem 1.25rem;
+      background: #fdf2f2;
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+      color: #b91c1c;
+    }
+    .result {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e8e4dd;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .result h2 {
+      font-size: 0.75rem;
+      color: #8a857e;
+      margin: 0 0 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+    .result p, .result ul { margin: 0 0 1rem; line-height: 1.6; }
+    .result ul { padding-left: 1.25rem; }
+    .result li { margin-bottom: 0.35rem; }
+    .result .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .badge.positive { background: #d1fae5; color: #065f46; }
+    .badge.neutral { background: #e0e7ff; color: #3730a3; }
+    .badge.negative { background: #fee2e2; color: #991b1b; }
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .tab {
+      padding: 0.5rem 1rem;
+      background: transparent;
+      color: #6b6560;
+      border: 1px solid #e8e4dd;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .tab:hover { color: #2c2a26; border-color: #d4cfc6; }
+    .tab.active { background: #fff; color: #2c2a26; border-color: #d4cfc6; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .record-area {
+      padding: 1.5rem;
+      background: #fff;
+      border: 1px solid #e8e4dd;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .record-area.hidden { display: none; }
+    .upload-area.hidden { display: none; }
+    #recordBtn { background: #dc2626; }
+    #recordBtn:hover { background: #b91c1c; }
+    #recordBtn.recording { background: #dc2626; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 50% { opacity: 0.8; } }
+    .recording-status { color: #dc2626; font-size: 0.9rem; margin-top: 0.5rem; }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <h1>VoiceLine</h1>
+  <p class="subtitle">Upload or record a sales call to analyze and log to CRM.</p>
+
+  <div class="tabs">
+    <button type="button" class="tab active" data-tab="upload">Upload</button>
+    <button type="button" class="tab" data-tab="record">Record</button>
+  </div>
+
+  <form id="form">
+    <div class="upload-area" id="uploadArea">
+      <input type="file" id="file" name="file" accept=".wav,.mp3,audio/wav,audio/mpeg">
+    </div>
+    <div class="record-area hidden" id="recordArea">
+      <button type="button" id="recordBtn">Record</button>
+      <p class="recording-status hidden" id="recordStatus">Recording…</p>
+    </div>
+    <button type="submit" id="submit">Analyze</button>
+  </form>
+
+  <div id="message"></div>
+  <div id="result"></div>
+
+  <script>
+    const form = document.getElementById('form');
+    const fileInput = document.getElementById('file');
+    const submitBtn = document.getElementById('submit');
+    const messageEl = document.getElementById('message');
+    const resultEl = document.getElementById('result');
+    const uploadArea = document.getElementById('uploadArea');
+    const recordArea = document.getElementById('recordArea');
+    const recordBtn = document.getElementById('recordBtn');
+    const recordStatus = document.getElementById('recordStatus');
+
+    let recordedBlob = null;
+    let mediaRecorder = null;
+
+    // Tab switch
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const mode = tab.dataset.tab;
+        if (mode === 'upload') {
+          uploadArea.classList.remove('hidden');
+          recordArea.classList.add('hidden');
+          recordBtn.textContent = 'Record';
+          recordedBlob = null;
+        } else {
+          uploadArea.classList.add('hidden');
+          recordArea.classList.remove('hidden');
+          fileInput.value = '';
+        }
+      });
+    });
+
+    // Recording
+    recordBtn.addEventListener('click', async () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        mediaRecorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach(t => t.stop());
+          recordedBlob = new Blob(chunks, { type: 'audio/webm' });
+          recordBtn.textContent = 'Record';
+          recordBtn.classList.remove('recording');
+          recordStatus.classList.add('hidden');
+        };
+        mediaRecorder.start();
+        recordBtn.textContent = 'Stop';
+        recordBtn.classList.add('recording');
+        recordStatus.classList.remove('hidden');
+      } catch (err) {
+        messageEl.innerHTML = `<div class="error">Microphone access denied: ${escapeHtml(err.message)}</div>`;
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const file = fileInput.files[0];
+      const useRecorded = recordArea.classList.contains('hidden') === false && recordedBlob;
+      if (!file && !useRecorded) {
+        messageEl.innerHTML = '<div class="error">Choose a file or record audio first.</div>';
+        return;
+      }
+
+      messageEl.innerHTML = '';
+      resultEl.innerHTML = '';
+      submitBtn.disabled = true;
+      messageEl.textContent = 'Analyzing...';
+
+      const fd = new FormData();
+      if (useRecorded) {
+        fd.append('file', recordedBlob, 'recording.webm');
+      } else {
+        fd.append('file', file);
+      }
+
+      const apiBase = window.location.port === '8080' ? '' : `${window.location.protocol}//${window.location.hostname}:8080`;
+      try {
+        const res = await fetch(apiBase + '/voice-to-crm', {
+          method: 'POST',
+          body: fd
+        });
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (parseErr) {
+          if (text.startsWith('<!') || text.startsWith('<')) {
+            throw new Error('Server returned HTML instead of JSON. Run the VoiceLine server (go run main.go) and open http://localhost:8080');
+          }
+          throw parseErr;
+        }
+
+        if (!res.ok) {
+          messageEl.innerHTML = `<div class="error">${data.error || 'Something went wrong'}</div>`;
+          return;
+        }
+
+        messageEl.textContent = 'Done. Logged to sheet.';
+        const badgeClass = (data.sentiment || '').toLowerCase();
+        resultEl.innerHTML = `
+          <div class="result">
+            <h2>Summary</h2>
+            <p>${escapeHtml(data.summary || '-')}</p>
+            <h2>Client</h2>
+            <p>${escapeHtml(data.client_name || '-')}</p>
+            <h2>Sentiment</h2>
+            <p><span class="badge ${badgeClass}">${escapeHtml(data.sentiment || '-')}</span></p>
+            <h2>Urgency</h2>
+            <p>${data.urgency_score ?? '-'} / 10</p>
+            <h2>Action items</h2>
+            <ul>${(data.action_items || []).map(i => '<li>' + escapeHtml(i) + '</li>').join('') || '<li>None</li>'}</ul>
+          </div>
+        `;
+      } catch (err) {
+        let msg = err.message;
+        if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+          msg = 'Could not reach the server. Run "go run main.go" and open http://localhost:8080 in your browser.';
+        }
+        messageEl.innerHTML = `<div class="error">${escapeHtml(msg)}</div>`;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+  </script>
+</body>
+</html>
