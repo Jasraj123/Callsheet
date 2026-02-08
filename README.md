@@ -1,138 +1,194 @@
 # VoiceLine — Intelligent Sales Routing Engine
 
-A Go backend that turns voice into actionable CRM data: it analyzes sales audio with **Google Gemini 1.5 Flash**, logs every call to **Google Sheets**, and triggers **instant alerts** for high-urgency leads via a configurable webhook (e.g. Slack).
+VoiceLine turns sales call audio into structured data on Google sheets. Upload or record a call, and it analyzes the conversation with **Google Gemini**, extracts summary, action items, sentiment, and urgency, then logs everything to **Google Sheets**.
 
 ---
 
-## Why VoiceLine?
+## Quick Start — How to Spin This Up
 
-### Smart Routing as a Competitive Advantage
+### 1. Prerequisites
 
-Most voice-to-CRM pipelines stop at “log the call.” VoiceLine adds **intelligent routing** so that:
+- **Go 1.23+** — [Install Go](https://go.dev/dl/)
+- **Gemini API key** — [Google AI Studio](https://aistudio.google.com/apikey)
+- **Google Cloud project** with Sheets API enabled and a service account
 
-- **Every call is captured** in a single sheet (Timestamp, Client, Summary, Sentiment, Urgency).
-- **Urgent deals don’t slip:** when urgency &gt; 7, the engine immediately POSTs to your `ALERT_WEBHOOK_URL` with a clear message (e.g. “URGENT: [Client] needs immediate follow up!”), so sales and support can act in real time.
-- **AI does the triage:** Gemini extracts summary, action items, sentiment, and a 1–10 urgency score so your team focuses on what matters instead of re-listening to every recording.
-
-That combination—**always log, conditionally alert**—makes VoiceLine a routing engine, not just a logger, and gives you a clear edge in response time and pipeline visibility.
-
----
-
-## Tech Stack
-
-| Layer        | Technology                          |
-|-------------|--------------------------------------|
-| Framework   | **Gin** (Go)                         |
-| AI          | **Google Gemini 1.5 Flash** (`google.golang.org/genai`) |
-| Integrations| **Google Sheets API**, generic **Webhook** (Slack-compatible) |
-| Config      | **.env** (e.g. `godotenv`)           |
-
----
-
-## Project Structure (Clean Architecture)
-
-```
-voiceline/
-├── main.go                 # Entrypoint, wiring
-├── .env.example            # Env template
-├── go.mod / go.sum
-├── internal/
-│   ├── config/             # Load GEMINI_API_KEY, SPREADSHEET_ID, ALERT_WEBHOOK_URL
-│   ├── handlers/           # HTTP: POST /voice-to-crm
-│   ├── models/             # VoiceAnalysis (summary, action_items, sentiment, urgency_score, client_name)
-│   └── services/           # Gemini, Sheets, Webhook (with context timeouts)
-```
-
-- **Handlers** — API surface and validation.
-- **Services** — External APIs (Gemini, Sheets, Webhook); all use `context` timeouts and proper error handling.
-
----
-
-## Requirements
-
-- **Go 1.21+**
-- **GEMINI_API_KEY** — [Google AI Studio](https://aistudio.google.com/apikey)
-- **SPREADSHEET_ID** — Target Google Sheet (service account must have edit access).
-- **ALERT_WEBHOOK_URL** — Webhook URL for urgent alerts (e.g. Slack incoming webhook).
-- **Google Sheets auth** — Service account JSON path in `GOOGLE_APPLICATION_CREDENTIALS`, or application default credentials.
-
----
-
-## Setup
-
-1. **Clone and install**
-
-   ```bash
-   cd voiceline
-   go mod tidy
-   go build -o voiceline .
-   ```
-
-2. **Configure environment**
-
-   ```bash
-   cp .env.example .env
-   # Edit .env: GEMINI_API_KEY, SPREADSHEET_ID, ALERT_WEBHOOK_URL
-   # Optional: GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
-   ```
-
-3. **Google Sheet**
-
-   - Create a sheet with (or leave empty for auto-append):  
-     `Timestamp` | `Client` | `Summary` | `Sentiment` | `Urgency`
-   - Share the sheet with the **service account email** (e.g. `xxx@yyy.iam.gserviceaccount.com`) with “Editor” access.
-
-4. **Run**
-
-   ```bash
-   ./voiceline
-   # Server listens on :8080
-   ```
-
----
-
-## API
-
-### `POST /voice-to-crm`
-
-- **Content-Type:** `multipart/form-data`
-- **Field:** `file` — audio file (`.wav` or `.mp3`, max 25 MB).
-
-**Flow:**
-
-1. Upload is validated (type, size).
-2. Audio is sent to **Gemini 1.5 Flash** with a Sales Assistant prompt; the model returns JSON: `summary`, `action_items`, `sentiment`, `urgency_score`, `client_name`.
-3. **Always:** one row is appended to the Google Sheet: `[Timestamp, Client, Summary, Sentiment, Urgency]`.
-4. **If urgency_score &gt; 7:** a POST is sent to `ALERT_WEBHOOK_URL` with:  
-   `"🚨 URGENT: [Client Name] needs immediate follow up! Summary: [Summary]"` (e.g. in a JSON body like `{"text": "..."}` for Slack).
-
-**Example (curl):**
+### 2. Clone & Install
 
 ```bash
-curl -X POST http://localhost:8080/voice-to-crm \
-  -F "file=@/path/to/call.mp3"
+git clone <repo-url>
+cd Voiceline
+go mod tidy
+go build -o voiceline .
 ```
 
-**Example response (200):**
+### 3. Environment Variables
 
-```json
-{
-  "summary": "Client asked about enterprise pricing and timeline.",
-  "action_items": ["Send proposal by EOW", "Schedule technical call"],
-  "sentiment": "positive",
-  "urgency_score": 8,
-  "client_name": "Acme Corp"
-}
+Create a `.env` file in the project root:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key
+SPREADSHEET_ID=your_google_sheet_id
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/your-service-account.json
+```
+
+- **GEMINI_API_KEY** — From [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+- **SPREADSHEET_ID** — The ID from your Google Sheet URL:  
+  `https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit`
+- **GOOGLE_APPLICATION_CREDENTIALS** — Path to the service account JSON key file
+
+### 4. Google Sheet Setup
+
+1. Create a Google Sheet (or use an existing one).
+2. Add a header row: `Timestamp` | `Client` | `Summary` | `Sentiment` | `Urgency` | `Urgent`
+3. Enable **Google Sheets API** for your GCP project.
+4. Create a service account in [Google Cloud Console](https://console.cloud.google.com/) → IAM & Admin → Service Accounts → Create.
+5. Download the JSON key and set its path in `GOOGLE_APPLICATION_CREDENTIALS`.
+6. **Share the sheet** with the service account email (from the JSON `client_email`) with **Editor** access.
+
+### 5. Run
+
+```bash
+go run main.go
+```
+
+Server listens on **http://localhost:8080**.
+
+- **Web UI:** Open http://localhost:8080 — upload or record audio, then click Analyze.
+- **API:** `POST /voice-to-crm` with multipart `file` (`.wav`, `.mp3`, or `.webm`).
+
+### 6. Test with curl
+
+```bash
+curl -X POST http://localhost:8080/voice-to-crm -F "file=@/path/to/call.mp3"
 ```
 
 ---
 
-## Smart Routing Logic (Summary)
+## Tech Stack (Current)
 
-| Condition        | Action |
-|------------------|--------|
-| Every request    | Append row to Google Sheet (Timestamp, Client, Summary, Sentiment, Urgency). |
-| `urgency_score > 7` | POST to `ALERT_WEBHOOK_URL` with the urgent message above. |
+| Layer      | Technology                           |
+|-----------|--------------------------------------|
+| Backend   | Go, Gin                              |
+| AI        | Google Gemini 2.5 Flash              |
+| Storage   | Google Sheets API                    |
+| Frontend  | Vanilla HTML/JS (off-white UI)       |
+
+---
+
+## Project Structure
+
+```
+Voiceline/
+├── main.go
+├── .env                    # Your secrets (not committed)
+├── web/
+│   └── index.html         # Upload/Record + results UI
+└── internal/
+    ├── config/            # Load env vars
+    ├── handlers/          # POST /voice-to-crm
+    ├── models/            # VoiceAnalysis struct
+    └── services/          # Gemini, Sheets
+```
+
+---
+
+## If You Built VoiceLine From Scratch — Architecture & Tech Choices
+
+If you were designing VoiceLine as a full product (mobile app, backend, infra, AI) from scratch, here’s a practical stack and how the pieces would talk to each other.
+
+### 1. Building Blocks
+
+| Block         | Role |
+|---------------|------|
+| **Mobile app**| Capture and upload voice; show results and CRM history. |
+| **Backend API** | Receive audio, call AI, persist to DB/sheets, manage auth. |
+| **AI service**  | Transcribe + analyze audio (summary, sentiment, urgency, etc.). |
+| **Storage**     | CRM records, user data, call history. |
+| **Auth / identity** | Who can record, which CRM to write to. |
+
+### 2. Tech Choices
+
+**Mobile app**
+
+- **React Native** or **Flutter** for iOS + Android with shared logic.
+- **Expo** (React Native) for quicker iteration and OTA updates.
+- Record with native modules (e.g. `expo-av`, `react-native-audio-recorder`).
+
+**Backend**
+
+- **Go** (as in current VoiceLine) or **Node/TypeScript** with a framework like **Fastify**.
+- REST for normal flows; **WebSockets** if you add real-time features (live transcription, notifications).
+- **PostgreSQL** for users, orgs, CRM metadata; optionally **Redis** for caching and queues.
+
+**AI**
+
+- **Google Gemini** (or **Whisper + GPT**) for transcription + structured analysis.
+- Use **structured output** (e.g. JSON schema) so parsing is reliable.
+
+**Infra**
+
+- **Cloud Run** or **AWS Lambda** for the API (auto-scale, pay-per-use).
+- **GCP** if you lean on Gemini and Vertex AI.
+- **Terraform** or **Pulumi** for infra-as-code.
+- **GitHub Actions** or **Cloud Build** for CI/CD.
+
+**Storage**
+
+- **PostgreSQL** (users, orgs, call metadata).
+- **Google Sheets** or **Airtable** as “CRM” if you want spreadsheets; otherwise a proper DB with an ORM.
+- **Cloud Storage (GCS/S3)** for raw audio if you need long-term storage or replay.
+
+### 3. Communication Between Blocks
+
+```
+┌─────────────┐     HTTPS      ┌─────────────┐     API calls     ┌─────────────┐
+│  Mobile App │ ◄────────────► │  Backend    │ ◄───────────────► │  Gemini AI  │
+│  (RN/Flutter)│   REST/WS     │  (Go/Node)  │   (REST/GRPC)     │             │
+└─────────────┘                └──────┬──────┘                   └─────────────┘
+                                     │
+                                     │ SQL / Sheets API
+                                     ▼
+                              ┌─────────────┐
+                              │  PostgreSQL │
+                              │  or Sheets  │
+                              └─────────────┘
+```
+
+**Flow**
+
+1. **Mobile → Backend:**  
+   - Auth (JWT or session cookie).  
+   - `POST /voice-to-crm` with multipart audio.  
+   - Optional: WebSocket for live transcription.
+
+2. **Backend → AI:**  
+   - Upload audio to Gemini (or Whisper) via REST.  
+   - Request structured JSON (summary, sentiment, urgency, etc.).  
+   - Parse and validate response.
+
+3. **Backend → Storage:**  
+   - Write analysis rows to PostgreSQL or Google Sheets.  
+   - Optionally store raw audio in GCS/S3 and link by ID.
+
+4. **Backend → Mobile:**  
+   - Return analysis JSON.  
+   - Optionally push updates (e.g. via WebSocket or push notifications) for urgent alerts.
+
+**Auth**
+
+- **OAuth 2.0** (Google, Microsoft) for sign-in.  
+- **JWT** for API auth; refresh tokens for long-lived sessions.  
+- Backend checks token and maps user → org/CRM before writing.
+
+### 4. Minimal Viable Stack
+
+For an MVP:
+
+- **Expo / React Native** app, or simple web UI (like current VoiceLine).
+- **Go** backend with **Gin**, deployed on **Cloud Run**.
+- **Gemini** for audio analysis.
+- **Google Sheets** as CRM (or Postgres if you want a real DB).
+- **Firebase Auth** or **Supabase** for auth if you need it quickly.
 
 ---
 
