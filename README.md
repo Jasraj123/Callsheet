@@ -100,8 +100,3 @@ Example:
 curl -X POST http://localhost:8080/voice-to-crm -F "file=@call.mp3"
 ```
 
----
-
-## License
-
-MIT.
