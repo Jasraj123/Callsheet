@@ -1,4 +1,4 @@
-// VoiceLine — turns sales call audio into structured CRM data.
+// CallSheet — turns sales call audio into structured CRM data.
 // Flow: audio upload → Gemini analyzes → row appended to Google Sheet.
 package main
 
@@ -9,9 +9,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"voiceline/internal/config"
-	"voiceline/internal/handlers"
-	"voiceline/internal/services"
+	"callsheet/internal/config"
+	"callsheet/internal/handlers"
+	"callsheet/internal/services"
 )
 
 func main() {
@@ -53,7 +53,7 @@ func main() {
 		Addr:    ":8080",
 		Handler: router,
 	}
-	log.Println("VoiceLine server listening on :8080")
+	log.Println("CallSheet server listening on :8080")
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("server: %v", err)
 	}

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VoiceLine</title>
+  <title>CallSheet</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -150,7 +150,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h1>VoiceLine</h1>
+  <h1>CallSheet</h1>
   <p class="subtitle">Upload or record a sales call to analyze and log to CRM.</p>
 
   <div class="tabs">
@@ -265,7 +265,7 @@
           data = JSON.parse(text);
         } catch (parseErr) {
           if (text.startsWith('<!') || text.startsWith('<')) {
-            throw new Error('Server returned HTML instead of JSON. Run the VoiceLine server (go run main.go) and open http://localhost:8080');
+            throw new Error('Server returned HTML instead of JSON. Run the CallSheet server (go run main.go) and open http://localhost:8080');
           }
           throw parseErr;
         }

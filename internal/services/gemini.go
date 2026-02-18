@@ -10,7 +10,7 @@ import (
 
 	"google.golang.org/genai"
 
-	"voiceline/internal/models"
+	"callsheet/internal/models"
 )
 
 const (

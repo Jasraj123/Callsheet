@@ -10,7 +10,7 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 
-	"voiceline/internal/models"
+	"callsheet/internal/models"
 )
 
 const (

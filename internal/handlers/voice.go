@@ -12,8 +12,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"voiceline/internal/models"
-	"voiceline/internal/services"
+	"callsheet/internal/models"
+	"callsheet/internal/services"
 )
 
 const (
@@ -65,7 +65,7 @@ func (h *VoiceHandler) VoiceToCRM(c *gin.Context) {
 	}
 
 	tmpDir := os.TempDir()
-	tmpFile, err := os.CreateTemp(tmpDir, "voiceline-*"+ext)
+	tmpFile, err := os.CreateTemp(tmpDir, "callsheet-*"+ext)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create temp file"})
 		return
